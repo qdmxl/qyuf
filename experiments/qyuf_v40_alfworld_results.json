@@ -1,0 +1,38 @@
+{
+  "config": {
+    "total": 123,
+    "v40_tau": 0.6
+  },
+  "metrics": {
+    "classic": {
+      "avg_top1_score_v40": 2.8536585365853657,
+      "good_rate_v40": 0.959349593495935,
+      "avg_time_us": 0.11395807316177999
+    },
+    "grover_v35": {
+      "avg_top1_score_v40": -5.991869918699187,
+      "avg_own_score": 0.7943970189701899,
+      "good_rate_v40": 0.0,
+      "avg_time_us": 0.08616735773487348
+    },
+    "unitary_v40": {
+      "avg_top1_score_v40": 8.479674796747968,
+      "good_rate_v40": 1.0,
+      "avg_good_gain_pp": -5.4607636794825645,
+      "avg_upper_diff": 1.3116226842819678,
+      "avg_lower_diff": 1.378115908203117,
+      "avg_time_us": 0.08688204876839668
+    },
+    "consistency": {
+      "classic_vs_grover": 0.0,
+      "classic_vs_unitary": 0.22764227642276422,
+      "grover_vs_unitary": 0.0,
+      "all_same": 0.0
+    },
+    "tau_optimal_dist": {
+      "0.1": 31,
+      "0.7": 56,
+      "1.5": 36
+    }
+  }
+}
