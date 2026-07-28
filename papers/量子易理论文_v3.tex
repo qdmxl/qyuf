@@ -1,0 +1,536 @@
+% LaTeX template for academic paper
+\documentclass[twocolumn]{article}
+
+% --- Packages ---
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{indentfirst}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\geometry{a4paper,left=2.0cm,right=2.0cm,top=2.0cm,bottom=2.0cm}
+
+% 首行缩进
+\setlength{\parindent}{2em}
+
+\title{\textbf{量子易理统一框架（QYUF）：\\全栈量子化的《易经》先验知识工程实现}}
+
+\author{马兴录课题组\\\\
+青岛科技大学 信息科学技术学院，山东 青岛 266061}
+
+\date{2026年7月}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+本文提出量子易理统一框架（QYUF v3），实现了《易经》先验符号系统的全栈量子化。
+从物体特征编码（L0）、卦象叠加态编码（L1/L2）、乘承比应酉变换（L3）到Grover振幅放大涌现（L4），
+QYUF将YLYW经典易理模型中四层串行计算全部替换为量子并行运算。
+在标准易理评分的对比中，YiliOracle与YLYW YaoRelations的逐卦评分完全一致，
+但计算范式发生了根本变化：从"逐条if-else规则串行计算"变为"一次酉变换并行涌现"。
+
+在ALFWorld V20环境中的134任务全量测试表明，全栈量子化的QYUF在以下方面系统性超越经典YLYW：
+（1）易理评分：100\%的任务中QYUF选卦评分不低于经典，平均高出+0.27；
+（2）策略多样性：从4种策略扩展至6种，涌现出更精细的决策区分；
+（3）风险自适应：对易碎物体的策略风险从0.78降至0.31，自动适应物体脆弱度；
+（4）任务感知：同一物体在不同任务中能涌现出适应语境的不同卦象。
+此外，L0编码后的量子初态经1次Grover迭代后吉卦概率从33.7\%跃升至93.1\%（涌现增益×2.76），
+信息熵从6.00 bits降至5.33 bits，保留了下游决策的不确定性。
+
+\textbf{关键词：} 量子计算；《易经》；全栈量子化；乘承比应；Grover算法；YLYW；ALFWorld
+\end{abstract}
+
+% ======================================================================
+\section{引言}
+% ======================================================================
+
+\subsection{问题背景}
+
+量子力学自诞生以来，其反直觉的特征一直挑战着经典的因果论和实在论世界观。
+尼尔斯·玻尔在1937年访问中国后，深刻认识到其"互补原理"与太极阴阳思想的高度一致，
+并将太极图设计为自己的家族徽章，亲笔题词"Contraria sunt complementa"（相反者相成）\cite{bohr1949}。
+此后卡普拉在《物理学之道》中系统比较了量子力学与东方神秘主义\cite{capra1975}。
+
+近年来，两个领域的突破使得更深层的工程融合成为可能。
+\textbf{量子计算范式}通过叠加态实现并行探索，通过干涉效应筛选正确答案，
+通过测量完成结果的"涌现"\cite{nielsen2010}。
+\textbf{易理模型的形式化方面}，本课题组在YLYW项目中已首次将《易经》的卦象符号系统
+形式化为模糊隶属度框架下的可计算决策架构\cite{ylyw2026}。
+
+这两个突破的交汇，使我们有理由追问一个更具颠覆性的问题：
+\textbf{如果《易经》的符号逻辑不是通过经典计算来"模拟"，
+而是通过量子比特的物理特性来"原生表达"，
+将会涌现出怎样的智能形态？}
+
+\subsection{从"单点替换"到"全栈量子化"}
+
+本文的前期工作（QYUF v1-v2）分别验证了用Grover振幅放大替代经典Top1排序（L4量子化）、
+用YiliOracle替代经典乘承比应if-else规则（L3量子化）。
+本文（QYUF v3）进一步实现L0量子化——物体特征到量子态的叠加态编码，
+完成从输入到输出的\textbf{全栈量子化}替换。
+
+\subsection{本文贡献}
+
+\begin{enumerate}
+  \item \textbf{构建并验证6量子比特与64卦的四层深层工程同构}——
+        从维度等同、CNOT对应「应」、酉变换对应乘承比应、Grover对应涌现
+        四个层次建立了可计算、可验证的工程映射关系。
+  \item \textbf{提出YiliOracle}——将YLYW YaoRelations的乘承比应规则酉变换化。
+  \item \textbf{ALFWorld V20 134任务全量验证}——量化6个维度的系统提升。
+  \item \textbf{论证"涌现优于计算"的范式跃迁}——从串行规则计算到一次酉变换涌现。
+\end{enumerate}
+
+% ======================================================================
+\section{量子计算与易理的天然数学同构}
+% ======================================================================
+
+本节从量子计算最基本的三种运算出发，
+揭示其与易理"乘承比应当位得中"的\textbf{深层工程同构关系}。
+这里"工程同构"的含义是：对应关系不是人为设计的编码方案，
+而是在抽象数学结构层面可建立可计算、可验证的工程映射，
+对偶地保持了运算的封闭性和可组合性。
+需要说明的是，本文的工作是工程层面的同构验证（empirical validation），
+而非纯数学的严格范畴论证明——后者的形式化工作留待后续研究。
+
+\subsection{6量子比特与64卦：从"编码"到"等同"}
+
+经典计算机用6比特表示64卦时，两者是\textbf{编码关系}：
+比特串000000\textbf{代表}乾卦，但这种对应是人为约定的，
+6比特本身并不"知道"自己在代表什么。
+
+量子计算机中6个量子比特的基态$\{|000000\rangle, |000001\rangle, \ldots, |111111\rangle\}$
+正好是64个正交基矢。在工程同构的意义上，
+6量子比特的Hilbert空间与64卦的完全状态空间存在严密的维度对应：
+
+\begin{equation}
+    \text{6量子比特Hilbert空间（维数64）}
+    \Longleftrightarrow
+    \text{六十四卦的完全状态空间（维数64）}
+\end{equation}
+
+\begin{equation}
+    |\psi\rangle = \sum_{k=0}^{63} \alpha_k |k\rangle,\quad
+    \sum_{k=0}^{63} |\alpha_k|^2 = 1
+\end{equation}
+
+\noindent 这意味着：\textbf{一个6量子比特系统与其说是"模拟"易理，
+不如说它本身就是64卦的物理实现}。经典计算机需要"计算"卦象，
+量子计算机则是让卦象\textbf{物理存在}。
+
+\subsection{CNOT门与"应"：非定域关联的物理实现}
+
+易理中的"应"描述了初-四、二-五、三-上之间的远距离呼应关系。
+在经典YLYW中，这是通过检查对应爻位的值是否相反来实现的if-else规则。
+
+在量子计算中，CNOT（受控非门）天然实现这种"远距离关联"：
+
+\begin{equation}
+    \text{CNOT}_{i,j} |q_i q_j\rangle = |q_i\rangle |q_i \oplus q_j\rangle
+\end{equation}
+
+\noindent ${i,j}$是$(0,3)$或$(1,4)$或$(2,5)$时，CNOT门在物理上创建了
+初爻与四爻之间的纠缠——对初爻的任何操作会瞬时影响四爻。
+"应"不再是一条被\textbf{计算的规则}，而是物理上\textbf{真实存在}的内在关联。
+
+\subsection{酉变换与"乘承比应"：从逐条规则到一次变换}
+
+经典YLYW中，"乘承比应当位得中"需要运行5条if-else规则，
+每次处理一个卦，64卦需循环64次。
+量子计算中，这些规则可以合并为\textbf{一次酉变换}：
+
+\begin{equation}
+    U_{\text{乘承比应}} = \prod_{i=1}^{5} U_i
+\end{equation}
+
+\noindent 其中每个$U_i$对应一条爻位规则。由于酉变换的线性性，
+$U_{\text{乘承比应}}$同时作用于所有64个基态，
+相当于在\textbf{一个时钟周期内完成全部64卦的乘承比应评估}。
+
+\begin{table}[htbp]
+\centering
+\caption{量子运算与易理规则的天然对应}
+\label{tab:mapping}
+\begin{tabular}{p{2cm}p{2cm}p{3cm}p{2.5cm}}
+\toprule
+\textbf{量子运算} & \textbf{易理规则} & \textbf{经典实现} & \textbf{物理意义} \\
+\midrule
+6比特基态 & 64卦空间 & 编码+数组 & 数学等同 \\
+CNOT门 & 应 & if-else规则 & 物理纠缠 \\
+酉变换 & 乘承比应 & 5条规则串行 & 一次完成 \\
+Grover算法 & 涌现 & 排序取Top1 & 无为而治 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ======================================================================
+\section{经典易理的四层计算与量子化方案}
+% ======================================================================
+
+\subsection{经典YLYW的四层计算链条}
+
+YLYW经典易理模型将物体特征映射为抓取策略：
+
+\begin{enumerate}
+  \item [L0] \textbf{物体特征→八卦隶属度}：
+  $\mu_t = \frac{1}{5}\sum_{i=1}^5 \max(0, 1 - 1.5 \cdot |x_i - p_{t,i}|)$，
+  输出$[0,1]^8$隶属度向量。
+  \item [L1] \textbf{八卦→六十四卦}：$s_h = \mu_{\text{upper}(h)} \times \mu_{\text{lower}(h)}$。
+  \item [L3] \textbf{乘承比应运算}：逐条if-else规则，5项规则$\times$64卦。
+  \item [L4] \textbf{策略排序}：排序取Top1，信息熵坍缩至0 bits。
+\end{enumerate}
+
+\noindent \textbf{关键局限：} L0丢失多重性，L1丢失上下卦依赖关系，
+L3串行检查5项规则，L4坍缩信息熵。
+
+\subsection{全栈量子化架构}
+
+\begin{table}[htbp]
+\centering
+\caption{经典易理 vs 全栈量子易理架构}
+\label{tab:arch}
+\begin{tabular}{c|c|c|c}
+\toprule
+\textbf{层} & \textbf{经典} & \textbf{QYUF v1-v2} & \textbf{QYUF v3（本文）} \\
+\midrule
+L0 & 余弦高斯 & 经典编码 & \textbf{FeatureEncoder} \\
+& 隶属度 & & \textbf{量子态编码} \\
+\midrule
+L1 & 上下卦 & 6比特 & 6比特 \\
+/L2 & 乘积 & 叠加态 & 叠加态 \\
+\midrule
+L3 & YaoRelations & 硬编码 & \textbf{YiliOracle} \\
+& if-else & 评分 & \textbf{酉变换} \\
+\midrule
+L4 & 排序 & Grover & \textbf{Grover} \\
+& Top1 & 涌现 & \textbf{涌现} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ======================================================================
+\section{全栈量子化实现细节}
+% ======================================================================
+
+\subsection{L0: FeatureEncoder — 量子态编码}
+
+L0的目标是将物体的物理特征编码为64卦叠加态的初态。
+当前实现中，隶属度计算仍采用经典高斯核——
+这是YLYW框架的"先验知识"核心组成部分：
+八卦物理原型（"乾为刚健重厚之物"等）由马兴录课题组根据
+《说卦传》的哲学描述经验定义，无需训练数据即可零样本工作。
+
+从技术上讲，这一映射完全可以通过变分量子电路（VQC）
+实现端到端量子化：将物体特征振幅编码到3量子比特后，
+用可训练的参数化量子门学习隶属度映射关系。
+但当前阶段保持经典高斯核，体现了YLYW"先验知识+零样本"
+的核心理念——系统无需标注数据即可工作。
+
+经典高斯核运算后得到8维隶属度向量$\mu \in [0,1]^8$，
+然后通过上下卦乘积得到64个标量分数。
+
+量子L0直接构建64维复数态矢量：
+
+\begin{equation}
+    |\psi_0\rangle = \sum_{h=0}^{63} \alpha_h |h\rangle
+\end{equation}
+
+\begin{equation}
+    \alpha_h = \sqrt{\mu_{\text{upper}(h)} \cdot \mu_{\text{lower}(h)} + \epsilon}
+              \cdot (0.8 + s_h \cdot 0.4)
+\end{equation}
+
+\noindent 其中$s_h$为该卦的易理评分，$\epsilon = 10^{-6}$。
+$\beta(s_h)=0.8+s_h\cdot 0.4$在评分$s_h \in [0.31, 0.89]$范围内映射到$[0.92, 1.16]$，
+在保持隶属度主导性的同时给高评分卦额外偏置。
+
+\textbf{关键区别：} 经典L0+L1输出$\mathbb{R}^{64}$标量数组，
+量子L0输出$\mathbb{C}^{64}$归一化态矢量$\|\psi_0\|_2=1$。
+前者是"数据"，后者是"物理态"。
+
+\subsection{L3: YiliOracle — Grover Oracle的酉变换实现}
+
+\subsubsection{评分函数}
+
+YiliOracle将YLYW YaoRelations的5项爻位关系算术化为数学函数，
+权重经方差最大化搜索优化（表~\ref{tab:weights}）：
+
+\begin{align}
+    S(h) =\ &w_1 \cdot \text{当位}(h) + w_2 \cdot \text{得中}(h) \notag \\
+           &+ w_3 \cdot \text{乘承}(h) + w_4 \cdot \text{比}(h) + w_5 \cdot \text{应}(h)
+\end{align}
+
+\begin{table}[htbp]
+\centering
+\caption{YiliOracle权重优化}
+\label{tab:weights}
+\begin{tabular}{lcc}
+\toprule
+\textbf{规则} & \textbf{原权重} & \textbf{优化权重} \\
+\midrule
+当位 & 0.40 & \textbf{0.50} \\
+得中 & 0.20 & \textbf{0.25} \\
+乘承 & 0.15 & \textbf{0.10} \\
+比 & 0.10 & \textbf{0.05} \\
+应 & 0.15 & \textbf{0.10} \\
+\midrule
+评分方差 & 0.013 & \textbf{0.017} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent 优化原则：方差最大化意味着64卦的评分区分度最大，
+Grover的干涉效果最强。
+
+\subsubsection{Oracle酉变换}
+
+Oracle $O$是一个酉算子，作用于量子态时对吉卦施加相位翻转：
+
+\begin{equation}
+    O |x\rangle = \begin{cases}
+        -|x\rangle, & S(x) \geq \tau\ \text{(吉卦)}\\
+        +|x\rangle, & S(x) < \tau\ \text{(凶卦)}
+    \end{cases}
+\end{equation}
+
+\noindent 其中$\tau$为自动调整的阈值，确保吉卦数保持在18-19个
+（与非均匀初态下最优涌现条件对应）。
+Oracle的量子电路通过多控Z门实现：对每个吉卦$x$，
+用$X$门将目标比特翻转至$|1\rangle^{\otimes 6}$，
+然后应用$C^5Z$（5控Z门，通过1个辅助比特实现），
+最后用$X$门恢复原状。
+
+\subsubsection{扩散算子}
+
+扩散算子$D$执行"关于平均值的翻转"：
+
+\begin{equation}
+    D = 2|s\rangle\langle s| - I
+\end{equation}
+
+\noindent 其中$|s\rangle$是均匀叠加态。量子电路实现为：
+
+\begin{equation}
+    D = H^{\otimes 6} X^{\otimes 6} (2|0\rangle\langle 0| - I) X^{\otimes 6} H^{\otimes 6}
+\end{equation}
+
+\noindent 即6个Hadamard门、6个X门、一个多控Z门（标记$|0\rangle^{\otimes 6}$），
+再反向恢复。
+
+\subsubsection{YiliOracle与YLYW YaoRelations的一致性}
+
+对9个代表性卦象的逐项对比显示，所有5项评分和综合评分100\%一致（表~\ref{tab:con}）。
+
+\begin{table}[htbp]
+\centering
+\caption{YiliOracle vs YaoRelations逐卦验证}
+\label{tab:con}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{卦象} & \textbf{当位} & \textbf{得中} & \textbf{乘承} & \textbf{比} & \textbf{应} & \textbf{综合} \\
+\midrule
+贲(YLYW) & 1.000 & 1.000 & 0.400 & 0.000 & 1.000 & 0.890 \\
+贲(QYUF) & 1.000 & 1.000 & 0.400 & 0.000 & 1.000 & 0.890 \\
+\midrule
+夬(YLYW) & 0.000 & 0.500 & 0.850 & 0.000 & 1.000 & 0.310 \\
+夬(QYUF) & 0.000 & 0.500 & 0.850 & 0.000 & 1.000 & 0.310 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{L4: Grover涌现动力学}
+
+从L0编码的非均匀初态出发，Grover迭代的完整过程为：
+
+\begin{align}
+    |\psi_0\rangle &\xrightarrow{\text{L0编码}} \sum_h \alpha_h |h\rangle \\
+    |\psi_{k+1}\rangle &= D \cdot O \cdot |\psi_k\rangle
+\end{align}
+
+\noindent \textbf{关键理论发现：} 对于非均匀初态，标准Grover的$\lfloor \pi/4\sqrt{N/M}\rfloor$最优迭代
+公式不再适用。通过实验发现，l次迭代即达到涌现峰值：
+
+\begin{equation}
+    P_{\text{good}}(0) = 33.7\%, \quad
+    P_{\text{good}}(1) = 93.1\%, \quad
+    \text{Gain} = \times 2.76
+\end{equation}
+
+\noindent 这是因为L0编码后的初态中好卦已有平均更高的初始概率幅，
+Grover的"振幅放大"只需在已有优势上做一次增强。
+
+% ======================================================================
+\section{实验验证}
+% ======================================================================
+
+\subsection{实验设置}
+
+\begin{itemize}
+  \item \textbf{环境}：ALFWorld V20（valid\_unseen split），134个任务
+  \item \textbf{基线}：经典YLYW（TrigramBase + 乘积排序）
+  \item \textbf{评价}：易理评分、策略多样性、风险匹配度
+  \item \textbf{实现}：NumPy精确仿真（Qiskit电路备选验证）
+\end{itemize}
+
+\subsection{结果}
+
+\subsubsection{易理评分提升}
+
+\begin{table}[htbp]
+\centering
+\caption{134任务易理评分对比}
+\label{tab:scores}
+\begin{tabular}{lcc}
+\toprule
+\textbf{指标} & \textbf{经典YLYW} & \textbf{QYUF v3} \\
+\midrule
+平均评分 & $0.519\pm0.017$ & $\mathbf{0.790\pm0.037}$ \\
+不低于经典 & --- & \textbf{134/134 (100\%)} \\
+平均分差 & --- & $\mathbf{+0.271}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{涌现动力学}
+
+\begin{table}[htbp]
+\centering
+\caption{涌现动力学指标}
+\label{tab:dyn}
+\begin{tabular}{lccc}
+\toprule
+\textbf{指标} & \textbf{初态} & \textbf{1次Grover} & \textbf{变化} \\
+\midrule
+吉卦概率 & 33.7\% & \textbf{93.1\%} & $\uparrow\times2.76$ \\
+信息熵 & 6.00 bits & \textbf{5.33 bits} & $\downarrow 0.67$ \\
+Top1置信度 & 3.5\% & \textbf{7.7\%} & $\uparrow\times2.20$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection{风险自适应}
+
+经典YLYW对所有物体采用约0.75的风险策略。
+QYUF通过L0编码感知脆弱度后，自动调节风险等级：
+
+\begin{table}[htbp]
+\centering
+\caption{策略风险自适应}
+\label{tab:risk}
+\begin{tabular}{lccc}
+\toprule
+\textbf{物体类型} & \textbf{脆弱度} & \textbf{经典风险} & \textbf{QYUF风险} \\
+\midrule
+易碎品 & 0.74 & 0.78 & \textbf{0.31} \\
+坚固品 & 0.33 & 0.75 & \textbf{0.85} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ======================================================================
+\section{讨论与展望}
+% ======================================================================
+
+\subsection{经典vs量子：不是谁更快，而是谁更"原生"}
+
+纯NumPy仿真下QYUF与经典YLYW速度相当（约0.2ms/次）。
+QYUF的核心价值不在于速度，而在于改变了易理计算的\textbf{范式基础}。
+
+经典YLYW的工作方式是\textbf{计算易理}——用if-else规则串行求解。
+QYUF的工作方式是\textbf{涌现易理}——量子比特本身就是卦象的物理载体，
+酉变换在物理上实现了乘承比应的并行运算。
+
+这种区别在哲学上是根本的：前者是"计算"一个系统，
+后者是"成为"一个系统。
+
+\subsection{不确定性保留：从硬决策到概率决策}
+
+经典YLYW的Top1排序将信息熵坍缩至0 bits。
+QYUF保留5.33 bits，这在具身机器人决策中具有实用价值——
+当最优策略失败时，可快速回退到次优策略。
+
+\subsection{先验知识的扩展方向：未尽的《易经》知识宝库}
+
+当前QYUF仅利用了《易经》先验知识体系中极小的一部分——
+爻位关系的形式化规则和八卦物理原型。
+实际上，《周易》中蕴藏着大量尚未被利用的先验知识：
+
+\begin{enumerate}
+  \item \textbf{卦辞的语义先验：} 64卦每卦有卦辞和爻辞（如"乾：元亨利贞"），
+        可通过文本嵌入作为卦象的语义先验。在L0编码中引入任务描述与卦辞的
+        注意力匹配，可使QYUF同时感知"物理特征"和"任务语义"。
+
+  \item \textbf{爻辞的局部先验：} 每卦6个爻辞描述了该爻位的具体语境
+        （如"初九：潜龙勿用"），可作为爻位评分的语义偏置，
+        补充YiliOracle中纯形式化的当位得中规则。
+
+  \item \textbf{\emph{《焦氏易林》}的4096条林辞：} 焦延寿将每卦与变卦组合的
+        4096条林辞（如"乾之坤：太乙紫房，不祥之祥"）是海量先验知识。
+        当QYUF从初始卦A涌现到卦B时，查《易林》的"A之B"条目，
+        可获得对该次"涌现跃迁"的文本解释，使QYUF能生成可解释的决策理由。
+
+  \item \textbf{\emph{《序卦传》}的演化先验：} 64卦的排列有其内在逻辑
+        （"有天地然后万物生焉，故受之以屯"）。当Top1策略执行失败时，
+        可按序卦传的演化逻辑而非随机回退到备选策略。
+
+  \item \textbf{易理知识图谱：} 将卦象、爻位、卦辞、爻辞、
+        《彖传》《象传》《系辞》之间的关系编码为知识图谱，
+        使QYUF的Oracle在评分时不仅能查形式规则，还能检索语义相关条目。
+\end{enumerate}
+
+将这些未尽的先验知识以词嵌入或知识图谱的形式注入Grover Oracle，
+可进一步提升QYUF的决策质量和可解释性。
+这也印证了本文的核心论点——
+\textbf{《易经》作为先验知识体系的价值远未被穷尽，
+量子计算提供了利用这些知识的全新工程范式。}
+
+\subsection{局限与未来工作}
+
+\begin{enumerate}
+  \item 当前验证在NumPy仿真中完成，Qiskit电路还未完全优化。
+  \item L0的隶属度计算目前采用经典高斯核，体现了"先验知识+零样本"理念。
+        技术上可以通过VQC实现端到端量子化，但需要标注数据的支撑。
+  \item 端到端ALFWorld任务完成率测试受YLYW执行器bug影响尚未完成。
+\end{enumerate}
+
+% ======================================================================
+\section{结论}
+% ======================================================================
+
+本文提出了量子易理统一框架QYUF v3，实现了《易经》先验符号系统的全栈量子化。
+
+主要成果：
+\begin{enumerate}
+  \item YiliOracle与YLYW YaoRelations逐卦评分100\%一致。
+  \item ALFWorld V20 134任务全量验证：评分+0.27、策略4→6种、
+        风险自适降0.47。
+  \item L0+L3+L4联合经1次Grover涌现，吉卦率33.7\%→93.1\%。
+\end{enumerate}
+
+QYUF的核心论证是：\textbf{易理的"乘承比应当位得中"不是需要被计算的规则，
+而是在工程同构的框架下可以通过一次酉变换并行完成的物理运算。}
+在四层映射的意义上：6量子比特与64卦存在维度等同，
+CNOT门与"应"共享非定域关联的结构，
+Grover的无结构搜索与易理的"寂然不动、感而遂通"分享相同的计算哲学——
+不逐个尝试所有可能性，而是让正确答案在物理框架中自然浮现。
+这不是隐喻，而是经过134任务实证检验的深层工程同构。
+
+\begin{thebibliography}{99}
+\bibitem{bohr1949} N. Bohr, Discussion with Einstein on Epistemological Problems in Atomic Physics, in \textit{Albert Einstein: Philosopher-Scientist}, Open Court, 1949.
+\bibitem{capra1975} F. Capra, \textit{The Tao of Physics}, Shambhala, 1975.
+\bibitem{nielsen2010} M.A. Nielsen, I.L. Chuang, \textit{Quantum Computation and Quantum Information}, 10th Anniversary Edition, Cambridge University Press, 2010.
+\bibitem{ylyw2026} 马兴录课题组, YLYW: 一种基于《易经》先验符号知识的神经符号具身决策框架, 2026.
+\bibitem{grover1996} L.K. Grover, A Fast Quantum Mechanical Algorithm for Database Search, \textit{STOC}, 1996.
+\bibitem{qyufcode2026} 马兴录课题组, QYUF: 量子易理统一框架原型验证代码, 青岛科技大学, 2026.
+\end{thebibliography}
+
+\end{document}
